@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Check if docker and docker-compose are installed
+command -v docker >/dev/null 2>&1 || { echo "docker is not installed. Aborting." >&2; exit 1; }
+command -v docker-compose >/dev/null 2>&1 || { echo "docker-compose is not installed. Aborting." >&2; exit 1; }
+
+dirname=`pwd`
+package_dir="vendor/visay/dockerjoomla"
+config_dir="${package_dir}/config"
+
+action=$1
+
+# Generate project name from folder name
+projectname=${PWD##*/}
+projectname=`echo ${projectname// /_}`
+projectname=`echo ${projectname} | tr '[A-Z]' '[a-z]'`
+
+# Wrap docker-compose command to use config from package
+wrapped_command="docker-compose -p \"${projectname}\" -f ${package_dir}/docker-compose.yml"
+
+# Use the projects folder name as servername
+DOCKER_JOOMLA_SERVERNAME=${projectname}
+
+# Replace the markers in the merge config file
+sed -e "s/DOCKER_JOOMLA_SERVERNAME/${DOCKER_JOOMLA_SERVERNAME}/g" ${config_dir}/web/nginx_default.conf > ${config_dir}/web/.nginx_default_merged.conf
+
+# Make sure all entrypoint scripts are executable
+chmod +x ${package_dir}/scripts/entrypoint/*.sh
+
+echo "####"
+echo "### Project name    : ${projectname}"
+echo "###"
+echo "### DockerJoomla is now running action '${action}'"
+echo "####"
+
+# Wrap docker-compose command to use config from package
+if [ "$action" = "run" ]; then
+	${wrapped_command} $1 --rm ${*:2}
+else
+	${wrapped_command} $*
+fi
+
+if [ "$action" = "up" ]; then
+	# Print information about running app container
+	echo "####"
+	echo "### Done! Your app is running here  : http://${projectname}/"
+	echo "####"
+fi
