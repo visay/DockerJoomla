@@ -2,7 +2,7 @@
 app:
   # For development of the image comment out the 'image' line and replace with the next line
   #build: .
-  image: visay/dockerjoomla:0.0.1
+  image: visay/dockerjoomla:1.0.0
   hostname: dockerjoomla
   domainname: dev
   volumes_from:
@@ -17,6 +17,8 @@ app:
     - redis
     - elasticsearch
     - couchdb
+  environment:
+    - HOST_USER_ID
 
 # Passive data container which only provides a shared filesystem for the other containers
 data:
